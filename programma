@@ -1,0 +1,232 @@
+import os
+import sys
+from PyQt6.QtWidgets import (
+    QApplication,
+    QWidget,
+    QTabWidget,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QFileDialog,
+    QTextEdit,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QMessageBox
+)
+
+class MainWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("PyQt6 Application")
+
+        # Создаем вкладки
+        self.tabs = QTabWidget()
+        self.tab1 = QWidget()
+        self.tab2 = QWidget()
+        self.tab3 = QWidget()
+        self.tab4 = QWidget()
+        self.tab5 = QWidget()
+
+        self.tabs.addTab(self.tab1, "Сканирование папки")
+        self.tabs.addTab(self.tab2, "Редактор текста")
+        self.tabs.addTab(self.tab3, "Сохранение текста")
+        self.tabs.addTab(self.tab4, "Форма ввода")
+        self.tabs.addTab(self.tab5, "Чтение листа")
+
+        # Вкладка 1: Сканирование папки
+        self.folder_label = QLabel("Папка:")
+        self.folder_input = QLineEdit()
+        self.browse_button = QPushButton("Обзор...")
+        self.browse_button.clicked.connect(self.browse_folder)
+        self.file_list = QTextEdit()
+        self.file_list.setReadOnly(True)
+
+        layout1 = QVBoxLayout()
+        layout1.addWidget(self.folder_label)
+        layout1.addWidget(self.folder_input)
+        layout1.addWidget(self.browse_button)
+        layout1.addWidget(self.file_list)
+        self.tab1.setLayout(layout1)
+
+        # Вкладка 2: Редактор текста
+        self.open_button = QPushButton("Открыть")
+        self.open_button.clicked.connect(self.open_file)
+        self.save_button = QPushButton("Сохранить")
+        self.save_button.clicked.connect(self.save_file)
+        self.text_edit = QTextEdit()
+
+        layout2 = QVBoxLayout()
+        layout2.addWidget(self.open_button)
+        layout2.addWidget(self.save_button)
+        layout2.addWidget(self.text_edit)
+        self.tab2.setLayout(layout2)
+
+        # Вкладка 3: Сохранение текста
+        self.save_path_label = QLabel("Путь к файлу:")
+        self.save_path_input = QLineEdit()
+        self.save_path_button = QPushButton("Обзор...")
+        self.save_path_button.clicked.connect(self.browse_save_path)
+        self.save_text_button = QPushButton("Сохранить текст")
+        self.save_text_button.clicked.connect(self.save_text)
+        self.save_text_edit = QTextEdit()
+
+        layout3 = QVBoxLayout()
+        layout3.addWidget(self.save_path_label)
+        layout3.addWidget(self.save_path_input)
+        layout3.addWidget(self.save_path_button)
+        layout3.addWidget(self.save_text_edit)
+        layout3.addWidget(self.save_text_button)
+        self.tab3.setLayout(layout3)
+
+        # Вкладка 4: Форма ввода
+        self.input_layout = QGridLayout()
+        self.input_labels = [
+            "Поле 1:", "Поле 2:", "Поле 3:", "Поле 4:", "Поле 5:"
+        ]
+        self.input_fields = [
+            QLineEdit() for _ in range(len(self.input_labels))
+        ]
+        self.save_file_label = QLabel("Файл:")
+        self.save_file_input = QLineEdit()
+        self.save_file_button = QPushButton("Обзор...")
+        self.save_file_button.clicked.connect(self.browse_save_file)
+        self.save_data_button = QPushButton("Сохранить данные")
+        self.save_data_button.clicked.connect(self.save_data)
+
+        for i, label in enumerate(self.input_labels):
+            self.input_layout.addWidget(QLabel(label), i, 0)
+            self.input_layout.addWidget(self.input_fields[i], i, 1)
+
+        layout4 = QVBoxLayout()
+        layout4.addLayout(self.input_layout)
+        layout4.addWidget(self.save_file_label)
+        layout4.addWidget(self.save_file_input)
+        layout4.addWidget(self.save_file_button)
+        layout4.addWidget(self.save_data_button)
+        self.tab4.setLayout(layout4)
+
+        # Вкладка 5: Чтение листа
+        self.read_file_label = QLabel("Файл:")
+        self.read_file_input = QLineEdit()
+        self.read_file_button = QPushButton("Обзор...")
+        self.read_file_button.clicked.connect(self.browse_read_file)
+        self.read_data_button = QPushButton("Прочитать данные")
+        self.read_data_button.clicked.connect(self.read_data)
+        self.result_label = QLabel("")
+
+        layout5 = QVBoxLayout()
+        layout5.addWidget(self.read_file_label)
+        layout5.addWidget(self.read_file_input)
+        layout5.addWidget(self.read_file_button)
+        layout5.addWidget(self.read_data_button)
+        layout5.addWidget(self.result_label)
+        self.tab5.setLayout(layout5)
+
+        # Основной макет
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self.tabs)
+        self.setLayout(main_layout)
+
+    def browse_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Выберите папку")
+        if folder_path:
+            self.folder_input.setText(folder_path)
+            self.update_file_list(folder_path)
+
+    def update_file_list(self, folder_path):
+        self.file_list.clear()
+        try:
+            for filename in os.listdir(folder_path):
+                self.file_list.append(filename)
+        except FileNotFoundError:
+            QMessageBox.warning(self, "Ошибка", "Папка не найдена")
+
+    def open_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Открыть файл", "", "Текстовые файлы (*.txt);;Все файлы (*)"
+        )
+        if file_path:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                self.text_edit.setText(file.read())
+
+    def save_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Сохранить файл", "", "Текстовые файлы (*.txt);;Все файлы (*)"
+        )
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.write(self.text_edit.toPlainText())
+
+    def browse_save_path(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Выберите файл", "", "Текстовые файлы (*.txt);;Все файлы (*)"
+        )
+        if file_path:
+            self.save_path_input.setText(file_path)
+
+    def save_text(self):
+        file_path = self.save_path_input.text()
+        if not file_path:
+            QMessageBox.warning(self, "Ошибка", "Укажите путь к файлу.")
+            return
+
+        try:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.write(self.save_text_edit.toPlainText())
+            QMessageBox.information(self, "Успех", "Текст сохранен.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка сохранения: {e}")
+
+    def browse_save_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Выберите файл", "", "Текстовые файлы (*.txt);;Все файлы (*)"
+        )
+        if file_path:
+            self.save_file_input.setText(file_path)
+
+    def save_data(self):
+        file_path = self.save_file_input.text()
+        if not file_path:
+            QMessageBox.warning(self, "Ошибка", "Укажите путь к файлу.")
+            return
+
+        data = []
+        for i, field in enumerate(self.input_fields):
+            data.append(f"{i+1}, {field.text()}")
+
+        try:
+            with open(file_path, 'a', encoding='utf-8') as file:
+                for item in data:
+                    file.write(item + '\n')
+            QMessageBox.information(self, "Успех", "Данные сохранены.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка сохранения: {e}")
+
+    def browse_read_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Выберите файл", "", "Текстовые файлы (*.txt);;Все файлы (*)"
+        )
+        if file_path:
+            self.read_file_input.setText(file_path)
+
+    def read_data(self):
+        file_path = self.read_file_input.text()
+        if not file_path:
+            QMessageBox.warning(self, "Ошибка", "Укажите путь к файлу.")
+            return
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                data = file.readlines()
+            count = len(data)
+            name_value = data[1].strip().split(',')[1]
+            self.result_label.setText(f"Количество элементов: {count}, Наименование: {name_value}")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка чтения: {e}")
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
